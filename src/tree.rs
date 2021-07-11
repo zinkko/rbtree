@@ -31,6 +31,36 @@ impl Tree {
         }
         false
     }
+
+    pub fn insert(&mut self, value: i32) {
+        if self.root.is_none() {
+            self.root = Some(Box::new(Node {
+                value: value,
+                left: None,
+                right: None,
+            }));
+            return;
+        }
+        let mut node = self.root.as_mut().unwrap();
+        loop {
+            let to_left = value < node.value;
+            if to_left {
+                if node.left.is_some() {
+                    node = node.left.as_mut().unwrap();
+                } else {
+                    node.left = Some(Box::new(Node { value: value, left: None, right: None }));
+                    break;
+                }
+            } else {
+                if node.right.is_some() {
+                    node = node.right.as_mut().unwrap();
+                } else {
+                    node.right = Some(Box::new(Node { value: value, left: None, right: None }));
+                    break;
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
