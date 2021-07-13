@@ -53,6 +53,10 @@ impl Node {
         }
     }
 
+    pub fn is_black(&self) -> bool {
+        self.color == Color::Black
+    }
+
     pub fn rotate(self, rtype: RotationType) -> Node {
         match rtype {
             RotationType::Single(dir) => self.rotate_once(dir),
