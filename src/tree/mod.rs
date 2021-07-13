@@ -1,17 +1,13 @@
 use std::fmt;
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-enum Color {
-    Red,
-    Black,
-}
+mod iter;
+mod node;
+mod utils;
 
-fn get_color(node_or_leaf: Option<&Box<Node>>) -> Color {
-    match node_or_leaf {
-        Some(node) => node.color,
-        None => Color::Black,
-    }
-}
+use node::Node;
+use utils::{Color, get_color, Direction};
+
+
 
 fn recursive_insert(node: &mut Node, value: i32) -> InsertReturn {
     let direction = if value < node.value { Direction::Left } else { Direction::Right };
@@ -96,132 +92,11 @@ fn recursive_insert(node: &mut Node, value: i32) -> InsertReturn {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-enum Direction {
-    Left,
-    Right,
-}
-
-impl Direction {
-    fn opposite(&self) -> Direction {
-        match self {
-            Direction::Left => Direction::Right,
-            Direction::Right => Direction::Left,
-        }
-    }
-}
-
 enum InsertReturn {
     Done,
     Node,
     Parent(Direction),
     Rotation(Box<Node>),
-}
-
-struct Node {
-    left: Option<Box<Node>>,
-    right: Option<Box<Node>>,
-    value: i32,
-
-    color: Color,
-}
-
-impl Node {
-    fn new(color: Color, value: i32) -> Node {
-        Node { color: color, value: value, left: None, right: None }
-    }
-
-    fn get_child(&mut self, dir: Direction) -> Option<&mut Box<Node>> {
-        match dir {
-            Direction::Left => self.left.as_mut(),
-            Direction::Right => self.right.as_mut(),
-        }
-    }
-
-    fn get_child_as_ref(&mut self, dir: Direction) -> Option<&Box<Node>> {
-        match dir {
-            Direction::Left => self.left.as_ref(),
-            Direction::Right => self.right.as_ref(),
-        }
-    }
-
-    fn set_child(&mut self, dir: Direction, node: Node) {
-        match dir {
-            Direction::Left => self.left = Some(Box::new(node)),
-            Direction::Right => self.right = Some(Box::new(node)),
-        }
-    }
-
-    fn set_child_or_leaf(&mut self, dir: Direction, child: Option<Box<Node>>) {
-        match dir {
-            Direction::Left => self.left = child,
-            Direction::Right => self.right = child,
-        }
-    }
-
-    fn remove_child(&mut self, dir: Direction) -> Option<Box<Node>> {
-        match dir {
-            Direction::Left => {
-                self.left.take()
-            },
-            Direction::Right => {
-                self.right.take()
-            }
-        }
-    }
-
-    fn rotate(mut self, dir: Direction) -> Node {
-        let mut new_g = self.clone();
-        let u = self.remove_child(dir);
-        let mut p = *(self.remove_child(dir.opposite()).expect("Rotation need one child"));
-        let mut new_p = p.clone();
-        let n = p.remove_child(dir.opposite());
-        let s = p.remove_child(dir);
-
-        new_g.set_child_or_leaf(dir, u);
-        new_g.set_child_or_leaf(dir.opposite(), s);
-        
-        new_p.set_child(dir, new_g);
-        new_p.set_child_or_leaf(dir.opposite(), n);
-
-        new_p
-    }
-
-    fn rotate_twice(mut self, dir: Direction) -> Node {
-        let mut new_g = self.clone();
-        let u = self.remove_child(dir);
-        let mut p = *(self.remove_child(dir.opposite()).expect("Double rotation needs the parent"));
-        let mut new_p = p.clone();
-        let mut n = *(p.remove_child(dir).expect("Double rotation needs inner grandchild"));
-        let s = p.remove_child(dir.opposite());
-        let mut new_n = n.clone();
-
-        let b1 = n.remove_child(dir.opposite());
-        let b2 = n.remove_child(dir);
-
-        new_p.set_child_or_leaf(dir.opposite(), s);
-        new_p.set_child_or_leaf(dir, b1);
-        
-        new_g.set_child_or_leaf(dir.opposite(), b2);
-        new_g.set_child_or_leaf(dir, u);
-
-        new_n.set_child(dir.opposite(), new_p);
-        new_n.set_child(dir, new_g);
-
-        new_n
-    }
-}
-
-impl Clone for Node {
-    fn clone(&self) -> Self {
-        Node {
-            color: self.color,
-            value: self.value,
-            // left and right are owned by self, so they cannot be moved here
-            left: None,
-            right: None,
-        }
-    }
 }
 
 pub struct Tree {
@@ -273,57 +148,12 @@ impl Tree {
     }
 }
 
-enum IterTask {
-    Value(i32),
-    Node(Box<Node>),
-}
-
 impl IntoIterator for Tree {
     type Item = i32;
-    type IntoIter = IntoIter;
+    type IntoIter = iter::IntoIter;
 
-    fn into_iter(self) -> IntoIter {
-        IntoIter::new(self)
-    }
-}
-
-pub struct IntoIter {
-    tasks: Vec<IterTask>,
-}
-
-fn add_tasks(tasks: &mut Vec<IterTask>, node: Box<Node>) {
-    if let Some(right_node) = node.right {
-        tasks.push(IterTask::Node(right_node));
-    }
-    tasks.push(IterTask::Value(node.value));
-    if let Some(left_node) = node.left {
-        tasks.push(IterTask::Node(left_node));
-    }
-}
-
-impl IntoIter {
-    fn new(tree: Tree) -> IntoIter {
-        let mut tasks = Vec::new();
-        if let Some(root_node) = tree.root {
-            add_tasks(&mut tasks, root_node);
-        }
-        IntoIter { tasks: tasks }
-    }
-}
-
-impl Iterator for IntoIter {
-    type Item = i32;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while let Some(task) = self.tasks.pop() {
-            match task {
-                IterTask::Value(v) => return Some(v),
-                IterTask::Node(node) => {
-                    add_tasks(&mut self.tasks, node);
-                }
-            }
-        }
-        None
+    fn into_iter(self) -> iter::IntoIter {
+        iter::IntoIter::new(self)
     }
 }
 
