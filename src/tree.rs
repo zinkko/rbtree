@@ -169,6 +169,47 @@ impl Node {
             }
         }
     }
+
+    fn rotate(mut self, dir: Direction) -> Node {
+        let mut new_g = self.clone();
+        let u = self.remove_child(dir);
+        let mut p = *(self.remove_child(dir.opposite()).expect("Rotation need one child"));
+        let mut new_p = p.clone();
+        let n = p.remove_child(dir.opposite());
+        let s = p.remove_child(dir);
+
+        new_g.set_child_or_leaf(dir, u);
+        new_g.set_child_or_leaf(dir.opposite(), s);
+        
+        new_p.set_child(dir, new_g);
+        new_p.set_child_or_leaf(dir.opposite(), n);
+
+        new_p
+    }
+
+    fn rotate_twice(mut self, dir: Direction) -> Node {
+        let mut new_g = self.clone();
+        let u = self.remove_child(dir);
+        let mut p = *(self.remove_child(dir.opposite()).expect("Double rotation needs the parent"));
+        let mut new_p = p.clone();
+        let mut n = *(p.remove_child(dir).expect("Double rotation needs inner grandchild"));
+        let s = p.remove_child(dir.opposite());
+        let mut new_n = n.clone();
+
+        let b1 = n.remove_child(dir.opposite());
+        let b2 = n.remove_child(dir);
+
+        new_p.set_child_or_leaf(dir.opposite(), s);
+        new_p.set_child_or_leaf(dir, b1);
+        
+        new_g.set_child_or_leaf(dir.opposite(), b2);
+        new_g.set_child_or_leaf(dir, u);
+
+        new_n.set_child(dir.opposite(), new_p);
+        new_n.set_child(dir, new_g);
+
+        new_n
+    }
 }
 
 impl Clone for Node {
