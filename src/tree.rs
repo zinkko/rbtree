@@ -232,6 +232,60 @@ impl Tree {
     }
 }
 
+enum IterTask {
+    Value(i32),
+    Node(Box<Node>),
+}
+
+impl IntoIterator for Tree {
+    type Item = i32;
+    type IntoIter = IntoIter;
+
+    fn into_iter(self) -> IntoIter {
+        IntoIter::new(self)
+    }
+}
+
+pub struct IntoIter {
+    tasks: Vec<IterTask>,
+}
+
+fn add_tasks(tasks: &mut Vec<IterTask>, node: Box<Node>) {
+    if let Some(right_node) = node.right {
+        tasks.push(IterTask::Node(right_node));
+    }
+    tasks.push(IterTask::Value(node.value));
+    if let Some(left_node) = node.left {
+        tasks.push(IterTask::Node(left_node));
+    }
+}
+
+impl IntoIter {
+    fn new(tree: Tree) -> IntoIter {
+        let mut tasks = Vec::new();
+        if let Some(root_node) = tree.root {
+            add_tasks(&mut tasks, root_node);
+        }
+        IntoIter { tasks: tasks }
+    }
+}
+
+impl Iterator for IntoIter {
+    type Item = i32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(task) = self.tasks.pop() {
+            match task {
+                IterTask::Value(v) => return Some(v),
+                IterTask::Node(node) => {
+                    add_tasks(&mut self.tasks, node);
+                }
+            }
+        }
+        None
+    }
+}
+
 // helper function for fmt::Debug
 fn fmt_subtree(node: &Box<Node>, formatter: &mut fmt::Formatter, indent: usize) -> fmt::Result {
     let indent_size = 2;
@@ -387,5 +441,16 @@ mod tests {
         tools::assert_no_red_violations(&tree);
         tools::assert_no_black_violations(&tree);
         tools::assert_tree_size(&tree, expected_size);
+    }
+
+    #[test]
+    fn test_into_iter() {
+        let mut tree = Tree::new();
+        let values = vec![145, -1243, 54, -123, 434, 13];
+        for i in values {
+            tree.insert(i);
+        }
+
+        assert_eq!(tree.into_iter().collect::<Vec<i32>>(), vec![-1243, -123, 13, 54, 145, 434]);
     }
 }
