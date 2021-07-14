@@ -53,7 +53,14 @@ impl Node {
         }
     }
 
-    pub fn rotate(mut self, dir: Direction) -> Node {
+    pub fn rotate(self, rtype: RotationType) -> Node {
+        match rtype {
+            RotationType::Single(dir) => self.rotate_once(dir),
+            RotationType::Double(dir) => self.rotate_twice(dir),
+        }
+    }
+
+    fn rotate_once(mut self, dir: Direction) -> Node {
         let mut new_g = self.clone();
         let u = self.remove_child(dir);
         let mut p = *(self.remove_child(dir.opposite()).expect("Rotation need one child"));
@@ -70,7 +77,7 @@ impl Node {
         new_p
     }
 
-    pub fn rotate_twice(mut self, dir: Direction) -> Node {
+    fn rotate_twice(mut self, dir: Direction) -> Node {
         let mut new_g = self.clone();
         let u = self.remove_child(dir);
         let mut p = *(self.remove_child(dir.opposite()).expect("Double rotation needs the parent"));

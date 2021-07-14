@@ -5,7 +5,7 @@ mod node;
 mod utils;
 
 use node::Node;
-use utils::{Color, get_color, Direction};
+use utils::{Color, get_color, Direction, RotationType};
 
 
 
@@ -41,52 +41,21 @@ fn recursive_insert(node: &mut Node, value: i32) -> InsertReturn {
             } else {
                 // case 4 & 5, inner grandchild
                 if child_direction != direction {
-                    let s = next.as_mut().unwrap().remove_child(child_direction.opposite());
-                    let child = next.as_mut().unwrap().get_child(child_direction).unwrap();
-                    let b1 = child.remove_child(direction);
-                    let b2 = child.remove_child(direction.opposite());
-                    
-                    let mut new_n: Node = (**(next.as_mut().unwrap().get_child_as_ref(child_direction).unwrap())).clone();
-                    let mut new_p: Node = (***(next.as_mut().unwrap())).clone();
-                    let mut new_g: Node = node.clone();
-                    let u = node.remove_child(direction.opposite());
-
-                    new_n.color = Color::Black;
-                    new_g.color = Color::Red;
-
-                    new_p.set_child_or_leaf(direction, s);
-                    new_p.set_child_or_leaf(direction.opposite(), b1);
-                    
-                    new_g.set_child_or_leaf(direction, b2);
-                    new_g.set_child_or_leaf(direction.opposite(), u);
-
-                    new_n.set_child_or_leaf(direction, Some(Box::new(new_p)));
-                    new_n.set_child_or_leaf(direction.opposite(), Some(Box::new(new_g)));
-
-                    InsertReturn::Rotation(Box::new(new_n))
+                    InsertReturn::Rotate(RotationType::Double(direction.opposite()))
                 // case 5
                 } else {
-                    let s = next.as_mut().unwrap().remove_child(direction.opposite());
-                    let n = next.as_mut().unwrap().remove_child(direction);
-                    let mut new_p: Node = (***(next.as_mut().unwrap())).clone();
-                    let mut new_g: Node = node.clone();
-                    let u = node.remove_child(direction.opposite());
-                    
-                    new_p.color = Color::Black;
-                    new_g.color = Color::Red;
-
-                    new_g.set_child_or_leaf(direction, s);
-                    new_g.set_child_or_leaf(direction.opposite(), u);
-
-                    new_p.set_child_or_leaf(direction, n);
-                    new_p.set_child_or_leaf(direction.opposite(), Some(Box::new(new_g)));
-
-                    InsertReturn::Rotation(Box::new(new_p))
+                    InsertReturn::Rotate(RotationType::Single(direction.opposite()))
                 }
             }
         },
-        InsertReturn::Rotation(new_parent) => {
-            node.set_child(direction, *new_parent);
+        InsertReturn::Rotate(rotation_type) => {
+            let rotation_dir = rotation_type.get_direction();
+            let child = *(node.remove_child(direction).take().unwrap());
+            let mut rotated_node = child.rotate(rotation_type);
+            rotated_node.color = Color::Black;
+            rotated_node.get_child(rotation_dir).expect("The parent should have been rotated here").color = Color::Red;
+            
+            node.set_child(direction, rotated_node);
             InsertReturn::Done
         },
     }
@@ -96,7 +65,7 @@ enum InsertReturn {
     Done,
     Node,
     Parent(Direction),
-    Rotation(Box<Node>),
+    Rotate(RotationType),
 }
 
 pub struct Tree {
@@ -143,7 +112,14 @@ impl Tree {
             InsertReturn::Parent(_) => {
                 self.root.as_mut().unwrap().color = Color::Black;
             },
-            InsertReturn::Rotation(node) => self.root = Some(node),
+            InsertReturn::Rotate(rotation_type) => {
+                let rotation_dir = rotation_type.get_direction();
+                let old_root = *(self.root.take().unwrap());
+                let mut new_root = old_root.rotate(rotation_type);
+                new_root.color = Color::Black;
+                new_root.get_child(rotation_dir).expect("The parent should have been rotated here").color = Color::Red;
+                self.root = Some(Box::new(new_root));
+            }
         }
     }
 }

@@ -19,6 +19,21 @@ pub enum Direction {
     Right,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum RotationType {
+    Single(Direction),
+    Double(Direction),
+}
+
+impl RotationType {
+    pub fn get_direction(&self) -> Direction {
+        match self {
+            Self::Single(d) => *d,
+            Self::Double(d) => *d,
+        }
+    }
+}
+
 impl Direction {
     pub fn opposite(&self) -> Direction {
         match self {
