@@ -1,16 +1,16 @@
 
 use super::*;
 
-enum IterTask {
-    Value(i32),
-    Node(Box<Node>),
+enum IterTask<T: Ord + Copy> {
+    Value(T),
+    Node(Box<Node<T>>),
 }
 
-pub struct IntoIter {
-    tasks: Vec<IterTask>,
+pub struct IntoIter<T: Ord + Copy> {
+    tasks: Vec<IterTask<T>>,
 }
 
-fn add_tasks(tasks: &mut Vec<IterTask>, node: Box<Node>) {
+fn add_tasks<T: Ord + Copy>(tasks: &mut Vec<IterTask<T>>, node: Box<Node<T>>) {
     if let Some(right_node) = node.right {
         tasks.push(IterTask::Node(right_node));
     }
@@ -20,18 +20,18 @@ fn add_tasks(tasks: &mut Vec<IterTask>, node: Box<Node>) {
     }
 }
 
-impl IntoIter {
-    pub fn new(tree: RBTree) -> IntoIter {
+impl<T: Ord + Copy> IntoIter<T> {
+    pub fn new(tree: RBTree<T>) -> IntoIter<T> {
         let mut tasks = Vec::new();
         if let Some(root_node) = tree.root {
-            add_tasks(&mut tasks, root_node);
+            add_tasks::<T>(&mut tasks, root_node);
         }
         IntoIter { tasks: tasks }
     }
 }
 
-impl Iterator for IntoIter {
-    type Item = i32;
+impl<T: Ord + Copy> Iterator for IntoIter<T> {
+    type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(task) = self.tasks.pop() {

@@ -1,48 +1,48 @@
 
 use super::*;
 
-pub struct Node {
-    pub left: Option<Box<Node>>,
-    pub right: Option<Box<Node>>,
-    pub value: i32,
+pub struct Node<T: Ord + Copy> {
+    pub left: Option<Box<Node<T>>>,
+    pub right: Option<Box<Node<T>>>,
+    pub value: T,
 
     pub color: Color,
 }
 
-impl Node {
-    pub fn new(color: Color, value: i32) -> Node {
+impl<T: Ord + Copy> Node<T> {
+    pub fn new(color: Color, value: T) -> Node<T> {
         Node { color: color, value: value, left: None, right: None }
     }
 
-    pub fn get_child(&mut self, dir: Direction) -> Option<&mut Box<Node>> {
+    pub fn get_child(&mut self, dir: Direction) -> Option<&mut Box<Node<T>>> {
         match dir {
             Direction::Left => self.left.as_mut(),
             Direction::Right => self.right.as_mut(),
         }
     }
 
-    pub fn get_child_as_ref(&mut self, dir: Direction) -> Option<&Box<Node>> {
+    pub fn get_child_as_ref(&mut self, dir: Direction) -> Option<&Box<Node<T>>> {
         match dir {
             Direction::Left => self.left.as_ref(),
             Direction::Right => self.right.as_ref(),
         }
     }
 
-    pub fn set_child(&mut self, dir: Direction, node: Node) {
+    pub fn set_child(&mut self, dir: Direction, node: Node<T>) {
         match dir {
             Direction::Left => self.left = Some(Box::new(node)),
             Direction::Right => self.right = Some(Box::new(node)),
         }
     }
 
-    pub fn set_child_or_leaf(&mut self, dir: Direction, child: Option<Box<Node>>) {
+    pub fn set_child_or_leaf(&mut self, dir: Direction, child: Option<Box<Node<T>>>) {
         match dir {
             Direction::Left => self.left = child,
             Direction::Right => self.right = child,
         }
     }
 
-    pub fn remove_child(&mut self, dir: Direction) -> Option<Box<Node>> {
+    pub fn remove_child(&mut self, dir: Direction) -> Option<Box<Node<T>>> {
         match dir {
             Direction::Left => {
                 self.left.take()
@@ -57,14 +57,14 @@ impl Node {
         self.color == Color::Black
     }
 
-    pub fn rotate(self, rtype: RotationType) -> Node {
+    pub fn rotate(self, rtype: RotationType) -> Node<T> {
         match rtype {
             RotationType::Single(dir) => self.rotate_once(dir),
             RotationType::Double(dir) => self.rotate_twice(dir),
         }
     }
 
-    fn rotate_once(mut self, dir: Direction) -> Node {
+    fn rotate_once(mut self, dir: Direction) -> Node<T> {
         let mut new_g = self.clone();
         let u = self.remove_child(dir);
         let mut p = *(self.remove_child(dir.opposite()).expect("Rotation need one child"));
@@ -81,7 +81,7 @@ impl Node {
         new_p
     }
 
-    fn rotate_twice(mut self, dir: Direction) -> Node {
+    fn rotate_twice(mut self, dir: Direction) -> Node<T> {
         let mut new_g = self.clone();
         let u = self.remove_child(dir);
         let mut p = *(self.remove_child(dir.opposite()).expect("Double rotation needs the parent"));
@@ -106,7 +106,7 @@ impl Node {
     }
 }
 
-impl Clone for Node {
+impl<T: Ord + Copy> Clone for Node<T> {
     fn clone(&self) -> Self {
         Node {
             color: self.color,

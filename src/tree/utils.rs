@@ -6,7 +6,7 @@ pub enum Color {
     Black,
 }
 
-pub fn get_color(node_or_leaf: Option<&Box<Node>>) -> Color {
+pub fn get_color<T: Ord + Copy>(node_or_leaf: Option<&Box<Node<T>>>) -> Color {
     match node_or_leaf {
         Some(node) => node.color,
         None => Color::Black,
