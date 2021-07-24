@@ -1,7 +1,7 @@
 
 use super::*;
 
-pub struct Node<T: Ord + Copy> {
+pub struct Node<T: Ord> {
     pub left: Option<Box<Node<T>>>,
     pub right: Option<Box<Node<T>>>,
     pub value: T,
@@ -9,7 +9,7 @@ pub struct Node<T: Ord + Copy> {
     pub color: Color,
 }
 
-impl<T: Ord + Copy> Node<T> {
+impl<T: Ord> Node<T> {
     pub fn new(color: Color, value: T) -> Node<T> {
         Node { color: color, value: value, left: None, right: None }
     }
@@ -65,55 +65,38 @@ impl<T: Ord + Copy> Node<T> {
     }
 
     fn rotate_once(mut self, dir: Direction) -> Node<T> {
-        let mut new_g = self.clone();
         let u = self.remove_child(dir);
         let mut p = *(self.remove_child(dir.opposite()).expect("Rotation need one child"));
-        let mut new_p = p.clone();
         let n = p.remove_child(dir.opposite());
         let s = p.remove_child(dir);
 
-        new_g.set_child_or_leaf(dir, u);
-        new_g.set_child_or_leaf(dir.opposite(), s);
+        self.set_child_or_leaf(dir, u);
+        self.set_child_or_leaf(dir.opposite(), s);
         
-        new_p.set_child(dir, new_g);
-        new_p.set_child_or_leaf(dir.opposite(), n);
+        p.set_child(dir, self);
+        p.set_child_or_leaf(dir.opposite(), n);
 
-        new_p
+        p
     }
 
     fn rotate_twice(mut self, dir: Direction) -> Node<T> {
-        let mut new_g = self.clone();
         let u = self.remove_child(dir);
         let mut p = *(self.remove_child(dir.opposite()).expect("Double rotation needs the parent"));
-        let mut new_p = p.clone();
         let mut n = *(p.remove_child(dir).expect("Double rotation needs inner grandchild"));
         let s = p.remove_child(dir.opposite());
-        let mut new_n = n.clone();
 
         let b1 = n.remove_child(dir.opposite());
         let b2 = n.remove_child(dir);
 
-        new_p.set_child_or_leaf(dir.opposite(), s);
-        new_p.set_child_or_leaf(dir, b1);
+        p.set_child_or_leaf(dir.opposite(), s);
+        p.set_child_or_leaf(dir, b1);
         
-        new_g.set_child_or_leaf(dir.opposite(), b2);
-        new_g.set_child_or_leaf(dir, u);
+        self.set_child_or_leaf(dir.opposite(), b2);
+        self.set_child_or_leaf(dir, u);
 
-        new_n.set_child(dir.opposite(), new_p);
-        new_n.set_child(dir, new_g);
+        n.set_child(dir.opposite(), p);
+        n.set_child(dir, self);
 
-        new_n
-    }
-}
-
-impl<T: Ord + Copy> Clone for Node<T> {
-    fn clone(&self) -> Self {
-        Node {
-            color: self.color,
-            value: self.value,
-            // left and right are owned by self, so they cannot be moved here
-            left: None,
-            right: None,
-        }
+        n
     }
 }
