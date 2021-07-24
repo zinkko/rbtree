@@ -7,7 +7,7 @@ mod utils;
 use node::Node;
 use utils::{Color, get_color, Direction, RotationType};
 
-pub struct RBTree<T: Ord + Copy> {
+pub struct RBTree<T: Ord> {
     root: Option<Box<Node<T>>>,
 }
 
@@ -18,7 +18,7 @@ enum InsertReturn {
     Rotate(RotationType),
 }
 
-enum DeleteReturn<T: Ord + Copy> {
+enum DeleteReturn<T: Ord> {
     Done,
     NotFound,
     // Delete(possible replacement, checking done)
@@ -28,7 +28,7 @@ enum DeleteReturn<T: Ord + Copy> {
     Case3(Direction),
 }
 
-impl<T: Ord + Copy> RBTree<T> {
+impl<T: Ord> RBTree<T> {
 
     pub fn new() -> RBTree<T> {
         RBTree { root: None }
@@ -327,7 +327,7 @@ impl<T: Ord + Copy> RBTree<T> {
     
 }
 
-impl<T: Ord + Copy> IntoIterator for RBTree<T> {
+impl<T: Ord> IntoIterator for RBTree<T> {
     type Item = T;
     type IntoIter = iter::IntoIter<T>;
 
@@ -337,7 +337,7 @@ impl<T: Ord + Copy> IntoIterator for RBTree<T> {
 }
 
 // helper function for fmt::Debug
-fn fmt_subtree<T: Ord + Copy + fmt::Debug>(node: &Box<Node<T>>, formatter: &mut fmt::Formatter, indent: usize) -> fmt::Result {
+fn fmt_subtree<T: Ord + fmt::Debug>(node: &Box<Node<T>>, formatter: &mut fmt::Formatter, indent: usize) -> fmt::Result {
     let indent_size = 2;
     formatter.write_fmt(format_args!("{:width$} {:?} {:?}\n", "", node.color, node.value, width=indent))?;
 
@@ -355,7 +355,7 @@ fn fmt_subtree<T: Ord + Copy + fmt::Debug>(node: &Box<Node<T>>, formatter: &mut 
     }
 }
 
-impl<T: Ord + Copy + fmt::Debug> fmt::Debug for RBTree<T> {
+impl<T: Ord + fmt::Debug> fmt::Debug for RBTree<T> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match &self.root {
             Some(root_node) => fmt_subtree::<T>(root_node, formatter, 0),
@@ -372,14 +372,14 @@ mod tests {
     mod tools {
         use super::super::*;
 
-        pub fn assert_no_red_violations<T: Ord + Copy>(tree: &RBTree<T>) {
+        pub fn assert_no_red_violations<T: Ord>(tree: &RBTree<T>) {
             match &tree.root {
                 Some(node) => check_red_violations(&node),
                 None => {},
             }
         }
 
-        fn check_red_violations<T: Ord + Copy>(node: &Box<Node<T>>) {
+        fn check_red_violations<T: Ord>(node: &Box<Node<T>>) {
             if node.color == Color::Red {
                 assert_eq!(get_color(node.left.as_ref()), Color::Black, "Child of red node must be black");
                 assert_eq!(get_color(node.right.as_ref()), Color::Black, "Child of red node must be black");
@@ -393,11 +393,11 @@ mod tests {
             }
         }
 
-        pub fn assert_no_black_violations<T: Ord + Copy + fmt::Debug>(tree: &RBTree<T>) {
+        pub fn assert_no_black_violations<T: Ord + fmt::Debug>(tree: &RBTree<T>) {
             check_black_violations(tree.root.as_ref());
         }
 
-        fn check_black_violations<T: Ord + Copy + fmt::Debug>(node_or_leaf: Option<&Box<Node<T>>>) -> i32 {
+        fn check_black_violations<T: Ord + fmt::Debug>(node_or_leaf: Option<&Box<Node<T>>>) -> i32 {
             if let Some(node) = node_or_leaf {
                 let black_height_left = check_black_violations(node.left.as_ref());
                 let black_height_right = check_black_violations(node.right.as_ref());
@@ -413,11 +413,11 @@ mod tests {
             }
         }
 
-        pub fn assert_tree_size<T: Ord + Copy + fmt::Debug>(tree: &RBTree<T>, expected_size: usize) {
+        pub fn assert_tree_size<T: Ord + fmt::Debug>(tree: &RBTree<T>, expected_size: usize) {
             assert_eq!(subtree_size(tree.root.as_ref()), expected_size, "RBTree was not the right size");
         }
 
-        fn subtree_size<T: Ord + Copy>(node_or_leaf: Option<&Box<Node<T>>>) -> usize {
+        fn subtree_size<T: Ord>(node_or_leaf: Option<&Box<Node<T>>>) -> usize {
             match node_or_leaf {
                 Some(node) => subtree_size(node.left.as_ref()) + subtree_size(node.right.as_ref()) + 1,
                 None => 0,
